@@ -1,0 +1,4 @@
+bot:
+    name: Photo Import Bot
+    username: photoimport_bot
+    token: token
