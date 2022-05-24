@@ -1,5 +1,6 @@
 package com.glifery.photoimport.adapter.telegram;
 
+import com.glifery.photoimport.application.usecase.ImportMediaToStorage;
 import com.glifery.photoimport.domain.model.MediaData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ public class PhotoimportBot extends TelegramLongPollingBot {
     private String botToken;
 
     private final MediaOperator mediaOperator;
+    private final ImportMediaToStorage importMediaToStorage;
 
     @Override
     public String getBotUsername() {
@@ -40,6 +42,8 @@ public class PhotoimportBot extends TelegramLongPollingBot {
 
             Optional<MediaData> optionalMediaData = mediaOperator.extractMediaData(update, this);
             if (optionalMediaData.isPresent()) {
+                importMediaToStorage.execute(optionalMediaData.get());
+
                 message.setReplyToMessageId(update.getMessage().getMessageId());
                 message.setText(String.format(
                         "File %s from %s sent at %s",
