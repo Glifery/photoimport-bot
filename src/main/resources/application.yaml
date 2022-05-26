@@ -1,4 +1,11 @@
+app:
+    host: http://localhost:8080
+
 bot:
     name: Photo Import Bot
     username: photoimport_bot
     token: token
+
+google:
+    client_id: id
+    client_secret: secret

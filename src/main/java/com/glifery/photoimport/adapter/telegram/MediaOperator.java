@@ -33,14 +33,14 @@ public class MediaOperator {
                 });
     }
 
-    public Date getOriginalDate(Update update) {
+    private Date getOriginalDate(Update update) {
         Integer timestamp = Optional.ofNullable(update.getMessage().getForwardDate())
                 .orElse(update.getMessage().getDate());
 
         return new java.util.Date((long)timestamp*1000);
     }
 
-    public String getOriginalSender(Update update) {
+    private String getOriginalSender(Update update) {
         return Optional.ofNullable(update.getMessage().getForwardFromChat())
                 .map(chat -> chat.getTitle())
                 .orElse(
@@ -50,7 +50,7 @@ public class MediaOperator {
                 );
     }
 
-    public PhotoSize getPhoto(Update update) {
+    private PhotoSize getPhoto(Update update) {
         // Check that the update contains a message and the message has a photo
         if (update.hasMessage() && update.getMessage().hasPhoto()) {
             // When receiving a photo, you usually get different sizes of it
@@ -64,7 +64,7 @@ public class MediaOperator {
         return null;
     }
 
-    public String getFilePath(PhotoSize photo, DefaultAbsSender sender) {
+    private String getFilePath(PhotoSize photo, DefaultAbsSender sender) {
         Objects.requireNonNull(photo);
 
         if (Objects.nonNull(photo.getFilePath())) { // If the file_path is already present, we are done!
@@ -86,7 +86,7 @@ public class MediaOperator {
         return null; // Just in case
     }
 
-    public String getUserName(User user) {
+    private String getUserName(User user) {
         if (Objects.nonNull(user.getUserName())) {
            return user.getUserName();
         }

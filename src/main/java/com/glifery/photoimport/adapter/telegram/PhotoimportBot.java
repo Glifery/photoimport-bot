@@ -1,7 +1,9 @@
 package com.glifery.photoimport.adapter.telegram;
 
+import com.glifery.photoimport.application.port.MediaStorageInterface;
 import com.glifery.photoimport.application.usecase.ImportMediaToStorage;
 import com.glifery.photoimport.domain.model.MediaData;
+import com.glifery.photoimport.domain.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -23,6 +25,7 @@ public class PhotoimportBot extends TelegramLongPollingBot {
 
     private final MediaOperator mediaOperator;
     private final ImportMediaToStorage importMediaToStorage;
+    private final MediaStorageInterface mediaStorage;
 
     @Override
     public String getBotUsername() {
@@ -37,8 +40,23 @@ public class PhotoimportBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         try {
-            SendMessage message = new SendMessage();
-            message.setChatId(update.getMessage().getChatId().toString());
+            User user = retrieveUserFromUpdate(update);
+            SendMessage message = createSendMessage(update);
+
+            if (textEquals(update,"/start auth_completed")) {
+                message.setText("Google Photo account successfully connected");
+                execute(message);
+
+                return;
+            }
+
+            if (!mediaStorage.isAuthorized(user)) {
+                message.setParseMode("markdown");
+                message.setText(String.format("[Authorize in Google Photo](%s)", mediaStorage.getAuthUrl(user)));
+                execute(message);
+
+                return;
+            }
 
             Optional<MediaData> optionalMediaData = mediaOperator.extractMediaData(update, this);
             if (optionalMediaData.isPresent()) {
@@ -52,12 +70,29 @@ public class PhotoimportBot extends TelegramLongPollingBot {
                         optionalMediaData.get().getDate().toString()
                 ));
             } else {
-                message.setText("Unable to parse message");
+                message.setText("Unable to parse request");
             }
 
             execute(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+    }
+
+    private User retrieveUserFromUpdate(Update update) {
+        return new User(update.getMessage().getFrom().getId().toString());
+    }
+
+    private SendMessage createSendMessage(Update update) {
+        SendMessage message = new SendMessage();
+        message.setChatId(update.getMessage().getChatId().toString());
+
+        return message;
+    }
+
+    private boolean textEquals(Update update, String expected) {
+        return Optional.ofNullable(update.getMessage().getText())
+                .map(text -> text.equals(expected))
+                .orElse(false);
     }
 }
