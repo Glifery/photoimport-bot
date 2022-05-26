@@ -60,7 +60,7 @@ public class PhotoimportBot extends TelegramLongPollingBot {
 
             Optional<MediaData> optionalMediaData = mediaOperator.extractMediaData(update, this);
             if (optionalMediaData.isPresent()) {
-                importMediaToStorage.execute(optionalMediaData.get());
+                importMediaToStorage.execute(optionalMediaData.get(), user);
 
                 message.setReplyToMessageId(update.getMessage().getMessageId());
                 message.setText(String.format(
