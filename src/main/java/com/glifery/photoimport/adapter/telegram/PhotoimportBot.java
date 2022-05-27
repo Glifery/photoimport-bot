@@ -1,11 +1,11 @@
 package com.glifery.photoimport.adapter.telegram;
 
+import com.glifery.photoimport.application.config.AppConfig;
 import com.glifery.photoimport.application.port.MediaStorageInterface;
 import com.glifery.photoimport.application.usecase.ImportMediaToStorage;
 import com.glifery.photoimport.domain.model.MediaData;
 import com.glifery.photoimport.domain.model.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -17,24 +17,20 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class PhotoimportBot extends TelegramLongPollingBot {
-    @Value("${bot.username}")
-    private String botUsername;
-
-    @Value("${bot.token}")
-    private String botToken;
-
+    private final AppConfig appConfig;
+    private final TelegramConfig telegramConfig;
     private final MediaOperator mediaOperator;
     private final ImportMediaToStorage importMediaToStorage;
     private final MediaStorageInterface mediaStorage;
 
     @Override
     public String getBotUsername() {
-        return botUsername;
+        return telegramConfig.getUsername();
     }
 
     @Override
     public String getBotToken() {
-        return botToken;
+        return telegramConfig.getToken();
     }
 
     @Override
@@ -50,7 +46,7 @@ public class PhotoimportBot extends TelegramLongPollingBot {
                 return;
             }
 
-            if (!mediaStorage.isAuthorized(user)) {
+            if (!mediaStorage.isAuthorized(user) && appConfig.getImportEnabled()) {
                 message.setParseMode("markdown");
                 message.setText(String.format("[Authorize in Google Photo](%s)", mediaStorage.getAuthUrl(user)));
                 execute(message);
@@ -60,7 +56,9 @@ public class PhotoimportBot extends TelegramLongPollingBot {
 
             Optional<MediaData> optionalMediaData = mediaOperator.extractMediaData(update, this);
             if (optionalMediaData.isPresent()) {
-                importMediaToStorage.execute(optionalMediaData.get(), user);
+                if (appConfig.getImportEnabled()) {
+                    importMediaToStorage.execute(optionalMediaData.get(), user);
+                }
 
                 message.setReplyToMessageId(update.getMessage().getMessageId());
                 message.setText(String.format(

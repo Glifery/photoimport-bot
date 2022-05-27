@@ -1,7 +1,8 @@
 app:
     host: http://localhost:8080
+    import_enabled: true
 
-bot:
+telegram:
     name: Photo Import Bot
     username: photoimport_bot
     token: token
